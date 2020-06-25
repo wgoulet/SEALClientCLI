@@ -101,6 +101,7 @@ namespace SEALClientCLI
         {
             // Update port # in the following line.
             client.BaseAddress = new Uri("http://localhost/");
+            //client.BaseAddress = new Uri("https://sealserver20200623225403.azurewebsites.net/");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/octet-stream"));
@@ -111,7 +112,7 @@ namespace SEALClientCLI
             ulong polyModulusDegree = 4096;
             parms.PolyModulusDegree = polyModulusDegree;
             parms.CoeffModulus = CoeffModulus.BFVDefault(polyModulusDegree);
-            parms.PlainModulus = new Modulus(1024);
+            parms.PlainModulus = new Modulus(32768);
             using SEALContext context = new SEALContext(parms);
             using Evaluator evaluator = new Evaluator(context);
             using KeyGenerator keygen = new KeyGenerator(context);
@@ -126,7 +127,7 @@ namespace SEALClientCLI
             using Ciphertext xEncrypted = new Ciphertext();
             Console.WriteLine("Encrypt xPlain to xEncrypted.");
             encryptor.Encrypt(xPlainX, xEncrypted);
-            int y = 29;
+            int y = 2931;
             using Plaintext xPlainY = new Plaintext(y.ToString());
             using Ciphertext yEncrypted = new Ciphertext();
             encryptor.Encrypt(xPlainY, yEncrypted);
@@ -152,28 +153,10 @@ namespace SEALClientCLI
             SEALTransport transport = new SEALTransport();
             transport.ContextParams = SerializeSEAL(parms);
 
-            // Serialize the fHEParams for sending over the wire; Save method of Ciphertext
-            // is used to write the object to a stream that we'll use as a field in SEALTransport
-
-            MemoryStream str = new MemoryStream();
-            fHEParams.param1.Save(str);
-            byte[] buffer = new byte[str.Length];
-            str.Seek(0, SeekOrigin.Begin);
-            await str.ReadAsync(buffer, 0, (int)str.Length);
-            transport.FHEParam1 = System.Convert.ToBase64String(buffer);
+            transport.FHEParam1 = SerializeSEAL(fHEParams.param1);
             // Console.WriteLine(transport.FHEParam1);
-            str.SetLength(0);
-            fHEParams.param2.Save(str);
-            buffer = new byte[str.Length];
-            str.Seek(0, SeekOrigin.Begin);
-            await str.ReadAsync(buffer, 0, (int)str.Length);
-            transport.FHEParam2 = System.Convert.ToBase64String(buffer);
-            str.SetLength(0);
-            fHEParams.result.Save(str);
-            buffer = new byte[str.Length];
-            str.Seek(0, SeekOrigin.Begin);
-            await str.ReadAsync(buffer, 0, (int)str.Length);
-            transport.FHEResult = System.Convert.ToBase64String(buffer);
+            transport.FHEParam2 = SerializeSEAL(fHEParams.param2);
+            transport.FHEResult = SerializeSEAL(fHEParams.result);
             transport.Operation = fHEParams.operation;
 
             try
